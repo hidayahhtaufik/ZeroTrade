@@ -1,0 +1,88 @@
+/* User Card Styles */
+.user-card {
+  background: linear-gradient(135deg, #1f2937 0%, #111827 100%);
+  border-radius: 16px;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  border: 2px solid rgba(253, 176, 34, 0.2);
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.user-card:hover {
+  border-color: rgba(253, 176, 34, 0.5);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(253, 176, 34, 0.2);
+}
+
+.user-card.small {
+  padding: 12px;
+  gap: 8px;
+}
+
+.user-card.large {
+  padding: 32px;
+  gap: 24px;
+}
+
+/* Header */
+.user-card-header {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
+.user-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #9ca3af;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  padding: 4px 12px;
+  background: rgba(253, 176, 34, 0.1);
+  border-radius: 12px;
+  border: 1px solid rgba(253, 176, 34, 0.3);
+}
+
+/* Content */
+.user-card-content {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+}
+
+/* Footer */
+.user-card-footer {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.user-address-full {
+  font-family: 'Courier New', monospace;
+  font-size: 13px;
+  color: #d1d5db;
+  padding: 6px 12px;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 8px;
+  border: 1px solid rgba(253, 176, 34, 0.2);
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.user-card.small .user-address-full {
+  font-size: 11px;
+  padding: 4px 8px;
+}
+
+.user-card.large .user-address-full {
+  font-size: 15px;
+  padding: 8px 16px;
+}

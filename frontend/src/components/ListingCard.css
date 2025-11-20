@@ -1,0 +1,513 @@
+/* OpenSea-Style Card Layout */
+.listing-card-opensea {
+  background: var(--card-bg);
+  border: 1px solid var(--border-subtle);
+  border-radius: 16px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.listing-card-opensea:hover {
+  border-color: var(--primary);
+  transform: translateY(-4px);
+  box-shadow: 0 12px 32px rgba(253, 176, 34, 0.2);
+}
+
+/* Image Section - Large visual header */
+.card-image-section {
+  position: relative;
+  width: 100%;
+  height: 220px;
+  overflow: hidden;
+  background: #000;
+}
+
+.card-image-bg {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+}
+
+.card-image-uploaded {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  display: block;
+}
+
+.token-icon-large {
+  font-size: 72px;
+  font-weight: 900;
+  color: white;
+  text-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.sold-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sold-badge-large {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: white;
+  padding: 16px 40px;
+  border-radius: 12px;
+  font-size: 24px;
+  font-weight: 800;
+  box-shadow: 0 8px 24px rgba(16, 185, 129, 0.5);
+}
+
+/* Content Section */
+.card-content-opensea {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  flex: 1;
+}
+
+.token-name-large {
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--text);
+  margin: 0 0 16px 0;
+  letter-spacing: -0.5px;
+  min-height: 28px;
+  display: flex;
+  align-items: center;
+}
+
+/* WTS/WTB Profile Sections with Big Borders */
+.profile-section {
+  border: 3px solid;
+  border-radius: 12px;
+  padding: 14px;
+  margin-bottom: 16px;
+  min-height: 90px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.wts-section {
+  border-color: #ef4444;
+  background: rgba(239, 68, 68, 0.05);
+}
+
+.wtb-section {
+  border-color: #10b981;
+  background: rgba(16, 185, 129, 0.05);
+}
+
+.section-header {
+  margin-bottom: 12px;
+}
+
+.section-label {
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: #ef4444;
+}
+
+.wtb-section {
+  border-color: #10b981;
+  background: rgba(16, 185, 129, 0.05);
+}
+
+.wtb-section .section-label {
+  color: #10b981;
+}
+
+/* Buyer Placeholder */
+.buyer-placeholder {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 12px;
+  background: rgba(16, 185, 129, 0.1);
+  border-radius: 10px;
+  border: 2px solid rgba(16, 185, 129, 0.3);
+}
+
+.buyer-icon {
+  font-size: 32px;
+  width: 42px;
+  height: 42px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(16, 185, 129, 0.2);
+  border-radius: 8px;
+}
+
+.buyer-text {
+  font-size: 14px;
+  font-weight: 700;
+  color: #10b981;
+  flex: 1;
+}
+
+.profile-content {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.profile-address {
+  font-family: 'Courier New', monospace;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  background: rgba(0, 0, 0, 0.3);
+  padding: 8px 14px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  text-align: center;
+}
+
+.sold-indicator {
+  width: 100%;
+  text-align: center;
+  padding: 14px;
+  background: rgba(16, 185, 129, 0.15);
+  border: 2px solid rgba(16, 185, 129, 0.3);
+  border-radius: 12px;
+  color: #10b981;
+  font-weight: 700;
+  font-size: 15px;
+}
+
+/* Stats Grid */
+.stats-grid-opensea {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  padding: 16px 0;
+  border-top: 1px solid var(--border-subtle);
+  border-bottom: 1px solid var(--border-subtle);
+  min-height: 90px;
+}
+
+.stat-item-opensea {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-items: flex-start;
+}
+
+.stat-label-opensea {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  min-height: 16px;
+}
+
+.stat-value-opensea {
+  font-size: 17px;
+  font-weight: 800;
+  color: var(--text);
+  letter-spacing: -0.3px;
+  min-height: 24px;
+  display: flex;
+  align-items: center;
+}
+
+/* Footer */
+.card-footer-opensea {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 13px;
+}
+
+.footer-date {
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.footer-offers {
+  background: rgba(253, 176, 34, 0.15);
+  color: var(--primary);
+  padding: 6px 14px;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 14px;
+}
+
+/* Action Button */
+.btn-make-offer-opensea {
+  width: 100%;
+  background: linear-gradient(135deg, #FDB022 0%, #f59e0b 100%);
+  color: #0a0a0f;
+  border: none;
+  padding: 14px 24px;
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(253, 176, 34, 0.3);
+}
+
+.btn-make-offer-opensea:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(253, 176, 34, 0.5);
+}
+
+/* Clean Listing Card - Matches Reference Design */
+.listing-card-clean {
+  background: var(--card-bg);
+  border: 1px solid var(--border-subtle);
+  border-radius: 16px;
+  padding: 24px;
+  transition: all 0.3s ease;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+}
+
+.listing-card-clean:hover {
+  border-color: var(--primary);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(253, 176, 34, 0.15);
+}
+
+.listing-card-clean:hover .card-action-overlay {
+  opacity: 1;
+  pointer-events: all;
+}
+
+/* Header Section */
+.card-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 24px;
+  position: relative;
+}
+
+.company-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  /* Background set dynamically in component for variety */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 26px;
+  font-weight: 800;
+  color: #ffffff;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  flex-shrink: 0;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  border: 3px solid rgba(255, 255, 255, 0.2);
+}
+
+.company-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.company-name {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--text);
+  margin: 0;
+  letter-spacing: -0.5px;
+}
+
+.listing-type {
+  font-size: 13px;
+  font-weight: 600;
+  color: #ef4444;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin: 0;
+}
+
+.ethos-score-section {
+  margin-top: 8px;
+  display: inline-flex;
+}
+
+/* Deal Details Grid - 2 Columns */
+.deal-details-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  margin-bottom: 24px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.deal-detail {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.detail-label-clean {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.detail-value-clean {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: -0.5px;
+}
+
+/* Deal Type Section */
+.deal-type-section {
+  margin-bottom: 24px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.deal-type-value {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text);
+  margin-top: 8px;
+}
+
+/* Footer */
+.card-footer-clean {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.listed-date {
+  font-weight: 500;
+}
+
+.offer-count {
+  background: rgba(253, 176, 34, 0.1);
+  color: var(--primary);
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-weight: 600;
+}
+
+/* Action Overlay (appears on hover) */
+.card-action-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+  z-index: 10;
+}
+
+.btn-buy-overlay {
+  background: var(--primary);
+  color: var(--text-dark);
+  border: none;
+  padding: 16px 32px;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-buy-overlay:hover {
+  transform: scale(1.05);
+  box-shadow: 0 4px 16px rgba(253, 176, 34, 0.4);
+}
+
+.sold-badge {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: white;
+  padding: 16px 32px;
+  border-radius: 12px;
+  font-size: 18px;
+  font-weight: 700;
+  box-shadow: 0 4px 16px rgba(16, 185, 129, 0.4);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .card-image-section {
+    height: 180px;
+  }
+  
+  .token-icon-large {
+    font-size: 56px;
+  }
+  
+  .token-name-large {
+    font-size: 20px;
+  }
+  
+  .stats-grid-opensea {
+    grid-template-columns: 1fr 1fr;
+  }
+  
+  .profile-section {
+    padding: 12px;
+  }
+  
+  .section-label {
+    font-size: 10px;
+  }
+  
+  .card-content-opensea {
+    padding: 16px;
+  }
+}
+
+/* Dark/Light Theme Support */
+:root {
+  --card-bg: #1a1a2e;
+  --text: #ffffff;
+  --text-dark: #0a0a0f;
+  --text-secondary: #9ca3af;
+  --border-subtle: rgba(255, 255, 255, 0.1);
+  --primary: #FDB022;
+  --secondary: #0047FF;
+}
+
+[data-theme="light"] {
+  --card-bg: #ffffff;
+  --text: #0a0a0f;
+  --text-dark: #ffffff;
+  --text-secondary: #6b7280;
+  --border-subtle: rgba(0, 0, 0, 0.1);
+}
