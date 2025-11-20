@@ -298,8 +298,6 @@ npm run test:all        # Run contract + frontend tests
 - 84 frontend tests (71% passing)
 - Complete coverage of FHE operations, workflows, and UI
 
-**Test Report:** See [frontend/TEST_SUMMARY.md](frontend/TEST_SUMMARY.md) for detailed breakdown
-
 ## 🚀 Getting Started
 
 ### Prerequisites
@@ -351,38 +349,6 @@ npm run dev
 ```
 
 The app will be available at `http://localhost:3000`.
-
-### Quick Demo (Mock Mode)
-
-If the Zama relayer is unavailable, you can use mock mode:
-
-```bash
-cd frontend
-npm run dev
-```
-
-In browser console:
-```javascript
-localStorage.setItem('ZEROTRADE_MOCK_MODE', 'true')
-window.location.reload()
-```
-
-You'll see 5 sample listings with mock encrypted data! 🎉
-
-### Running Tests
-
-```bash
-# Smart contract tests
-npm test              # Run all 45 tests
-npm run test:verbose  # Verbose output
-npm run test:gas      # Gas usage report
-
-# Frontend tests
-cd frontend
-npm test              # Run all 84 tests
-npm test:coverage     # Coverage report
-npm test:ui           # Interactive test UI
-```
 
 ## 🔧 Technical Details
 
@@ -715,7 +681,7 @@ Use the network URL to access the app from your mobile device on the same networ
 ### ✅ **Developer Experience**
 - **Clean codebase** - Modular React components
 - **TypeScript ready** - Type definitions included
-- **Comprehensive docs** - README + test summary + inline comments
+- **Comprehensive docs** - README + inline comments
 - **Easy setup** - 5-minute quick start
 - **Multiple test modes** - Unit, integration, coverage, UI
 
@@ -746,7 +712,6 @@ Use the network URL to access the app from your mobile device on the same networ
 ### Project Documentation
 - **Smart Contract**: [contracts/ZeroTrade.sol](contracts/ZeroTrade.sol)
 - **Frontend App**: [frontend/src/App.jsx](frontend/src/App.jsx)
-- **Test Summary**: [frontend/TEST_SUMMARY.md](frontend/TEST_SUMMARY.md)
 - **Contract Tests**: [test/ZeroTrade.test.js](test/ZeroTrade.test.js)
 
 ## 📄 License
@@ -756,15 +721,3 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 ---
 
 **Built with ❤️ using ZAMA FHEVM v0.9 for private Web3 trading**
-
-*This project demonstrates a complete implementation of FHE-based private OTC trading with Ethos credibility scoring, from smart contract development to frontend integration, with comprehensive testing and documentation.*
-
-**Technical Stack:**
-- Solidity 0.8.24 (FHEVM v0.9)
-- React 18 + Vite
-- Ethers.js v6
-- Zama Relayer SDK v0.3.0-5 (CDN)
-- Ethos API v1
-- Vitest + Testing Library
-
-**Last Updated:** November 2024
