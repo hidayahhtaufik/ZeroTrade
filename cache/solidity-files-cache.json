@@ -2,7 +2,7 @@
   "_format": "hh-sol-cache-2",
   "files": {
     "/Users/taufik/Desktop/Project/eFishery/ZeroTrade/contracts/ZeroTrade.sol": {
-      "lastModificationDate": 1763944157021,
+      "lastModificationDate": 1763946042122,
       "contentHash": "e391e0077c9f61a42e7a95ef7d354d1f",
       "sourceName": "contracts/ZeroTrade.sol",
       "solcConfig": {
@@ -42,8 +42,8 @@
       ]
     },
     "/Users/taufik/Desktop/Project/eFishery/ZeroTrade/fhevmTemp/@fhevm/solidity/config/ZamaConfig.sol": {
-      "lastModificationDate": 1763945142286,
-      "contentHash": "c85e28972111397253ff2be2b8b9287e",
+      "lastModificationDate": 1763951137597,
+      "contentHash": "2ed697106fb9cc5510d56baf77bbda66",
       "sourceName": "@fhevm/solidity/config/ZamaConfig.sol",
       "solcConfig": {
         "version": "0.8.24",
