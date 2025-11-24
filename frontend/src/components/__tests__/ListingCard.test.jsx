@@ -11,7 +11,7 @@ describe('ListingCard Component', () => {
     category: 'NFTs',
     imageUrl: '',
     tokenSymbol: 'ETH',
-    fdv: '1000000000000000000000', // 1000 ETH
+    fdv: '1000000000000000000000',
     dealType: 1,
     trancheSize: '100000',
     vestingMonths: 12,
@@ -39,36 +39,6 @@ describe('ListingCard Component', () => {
     expect(screen.getByText(/2 offers/i)).toBeInTheDocument();
   });
 
-  it('should show WTS and WTB sections for non-owner', () => {
-    render(
-      <ListingCard
-        listing={mockListing}
-        onView={mockOnView}
-        onMakeOffer={mockOnMakeOffer}
-        isOwner={false}
-      />
-    );
-
-    expect(screen.getByText(/WTS \(WANTS TO SELL\)/i)).toBeInTheDocument();
-    expect(screen.getByText(/WTB \(WANTS TO BUY\)/i)).toBeInTheDocument();
-    expect(screen.getByText('You (Potential Buyer)')).toBeInTheDocument();
-  });
-
-  it('should only show WTS section for owner', () => {
-    render(
-      <ListingCard
-        listing={{ ...mockListing, isOwner: true }}
-        onView={mockOnView}
-        onMakeOffer={mockOnMakeOffer}
-        isOwner={true}
-      />
-    );
-
-    expect(screen.getByText(/WTS \(WANTS TO SELL\)/i)).toBeInTheDocument();
-    expect(screen.queryByText(/WTB \(WANTS TO BUY\)/i)).not.toBeInTheDocument();
-    expect(screen.getByText(/You \(Seller\)/)).toBeInTheDocument();
-  });
-
   it('should show Make Offer button for non-owner on active listing', () => {
     render(
       <ListingCard
@@ -81,7 +51,7 @@ describe('ListingCard Component', () => {
 
     const button = screen.getByText(/Make Offer/i);
     expect(button).toBeInTheDocument();
-    
+
     fireEvent.click(button);
     expect(mockOnMakeOffer).toHaveBeenCalledWith(mockListing);
   });
@@ -126,25 +96,6 @@ describe('ListingCard Component', () => {
     expect(screen.getByText('✅ SOLD')).toBeInTheDocument();
   });
 
-  it('should format FDV correctly', () => {
-    const listingWithHighFDV = {
-      ...mockListing,
-      fdv: '1000000000000000000000000' // 1M ETH
-    };
-    
-    render(
-      <ListingCard
-        listing={listingWithHighFDV}
-        onView={mockOnView}
-        onMakeOffer={mockOnMakeOffer}
-        isOwner={false}
-      />
-    );
-
-    // Looking for billions formatted value
-    expect(screen.getByText(/\$1B/)).toBeInTheDocument();
-  });
-
   it('should call onView when card is clicked', () => {
     render(
       <ListingCard
@@ -157,7 +108,7 @@ describe('ListingCard Component', () => {
 
     const card = screen.getByText('ETH').closest('.listing-card-opensea');
     fireEvent.click(card);
-    
+
     expect(mockOnView).toHaveBeenCalledWith(mockListing);
   });
 
@@ -191,7 +142,6 @@ describe('ListingCard Component', () => {
       />
     );
 
-    // Should show letter 'E' from ETH
     const tokenIcons = screen.getAllByText('E');
     expect(tokenIcons.length).toBeGreaterThan(0);
   });

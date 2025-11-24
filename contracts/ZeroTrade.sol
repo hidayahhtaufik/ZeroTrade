@@ -497,4 +497,170 @@ contract ZeroTrade is ZamaEthereumConfig {
         // Compare: offerAmount >= price
         return FHE.ge(offer.encryptedAmount, listing.encryptedPrice);
     }
+    
+    // ============================================
+    // USER DECRYPTION FUNCTIONS (Private, Off-chain)
+    // ============================================
+    
+    /**
+     * @notice Get encrypted listing price handle for user decryption
+     * @dev Seller can decrypt this off-chain using Zama Gateway relayer
+     * @param listingId The listing ID
+     * @return The encrypted price handle (euint64)
+     * 
+     * Usage Pattern (Frontend):
+     * 1. Call this function to get encrypted handle
+     * 2. Use fhevm.userDecrypt() with user's keypair to decrypt off-chain
+     * 3. Display decrypted value in UI
+     */
+    function getEncryptedListingPrice(uint256 listingId) external view returns (euint64) {
+        Listing storage listing = listings[listingId];
+        require(msg.sender == listing.seller, "Only seller can access encrypted price");
+        return listing.encryptedPrice;
+    }
+    
+    /**
+     * @notice Get encrypted offer amount and valuation for user decryption
+     * @dev Seller can decrypt these off-chain to compare offers privately
+     * @param offerId The offer ID
+     * @return encryptedAmount The encrypted offer amount (euint64)
+     * @return encryptedValuation The encrypted valuation (euint64)
+     * 
+     * Privacy: Only seller and buyer can decrypt. Other buyers remain blind.
+     */
+    function getEncryptedOfferDetails(uint256 offerId) external view returns (
+        euint64 encryptedAmount,
+        euint64 encryptedValuation
+    ) {
+        Offer storage offer = offers[offerId];
+        Listing storage listing = listings[offer.listingId];
+        
+        require(
+            msg.sender == listing.seller || msg.sender == offer.buyer,
+            "Only seller or buyer can access encrypted offer"
+        );
+        
+        return (offer.encryptedAmount, offer.encryptedValuation);
+    }
+    
+    /**
+     * @notice Batch get encrypted details for multiple offers
+     * @dev Allows seller to decrypt multiple offers efficiently in one go
+     * @param offerIds Array of offer IDs to retrieve
+     * @return amounts Array of encrypted amounts
+     * @return valuations Array of encrypted valuations
+     */
+    function getBatchEncryptedOffers(uint256[] calldata offerIds) external view returns (
+        euint64[] memory amounts,
+        euint64[] memory valuations
+    ) {
+        amounts = new euint64[](offerIds.length);
+        valuations = new euint64[](offerIds.length);
+        
+        for (uint256 i = 0; i < offerIds.length; i++) {
+            Offer storage offer = offers[offerIds[i]];
+            Listing storage listing = listings[offer.listingId];
+            
+            require(
+                msg.sender == listing.seller || msg.sender == offer.buyer,
+                "Not authorized for all offers"
+            );
+            
+            amounts[i] = offer.encryptedAmount;
+            valuations[i] = offer.encryptedValuation;
+        }
+        
+        return (amounts, valuations);
+    }
+    
+    // ============================================
+    // PUBLIC DECRYPTION FUNCTIONS (Transparent, On-chain Verified)
+    // ============================================
+    
+    // Storage for publicly revealed trade prices
+    mapping(uint256 => uint256) public revealedTradePrices;
+    mapping(uint256 => bool) public isTradeRevealed;
+    
+    // Events for public decryption
+    event TradeRevealRequested(uint256 indexed offerId, bytes32 indexed encryptedHandle);
+    event TradePriceRevealed(uint256 indexed offerId, uint256 clearPrice);
+    
+    /**
+     * @notice Request public decryption of a completed trade price
+     * @dev Makes the encrypted offer amount publicly decryptable via Zama relayer
+     * @param offerId The completed offer ID
+     * 
+     * Pattern (from Zama HighestDieRoll example):
+     * 1. This function marks ciphertext as publicly decryptable
+     * 2. Anyone calls Zama relayer to decrypt
+     * 3. Anyone calls verifyAndRecordTradePrice() with proof
+     * 4. Price becomes public on-chain
+     * 
+     * Use Case: Market transparency for price discovery
+     */
+    function requestPublicRevealTrade(uint256 offerId) external {
+        Offer storage offer = offers[offerId];
+        require(offer.status == OfferStatus.Completed, "Trade not completed");
+        require(!isTradeRevealed[offerId], "Trade already revealed");
+        
+        // Mark as publicly decryptable (Zama Gateway can now decrypt)
+        FHE.makePubliclyDecryptable(offer.encryptedAmount);
+        
+        emit TradeRevealRequested(offerId, FHE.toBytes32(offer.encryptedAmount));
+    }
+    
+    /**
+     * @notice Verify and record publicly decrypted trade price
+     * @dev Verifies the decryption proof and stores clear price on-chain
+     * @param offerId The offer ID
+     * @param clearPrice The decrypted price in wei (ABI-encoded)
+     * @param decryptionProof The cryptographic proof from Zama relayer
+     * 
+     * Security: FHE.checkSignatures() ensures clearPrice is legitimate decryption
+     * Pattern: From Zama's HighestDieRoll.sol example
+     */
+    function verifyAndRecordTradePrice(
+        uint256 offerId,
+        bytes memory clearPrice,
+        bytes memory decryptionProof
+    ) external {
+        Offer storage offer = offers[offerId];
+        require(offer.status == OfferStatus.Completed, "Trade not completed");
+        require(!isTradeRevealed[offerId], "Already revealed");
+        
+        // Build ciphertext array for verification
+        bytes32[] memory cts = new bytes32[](1);
+        cts[0] = FHE.toBytes32(offer.encryptedAmount);
+        
+        // Verify decryption proof (reverts if invalid)
+        FHE.checkSignatures(cts, clearPrice, decryptionProof);
+        
+        // Decode and store public price
+        uint256 decodedPrice = abi.decode(clearPrice, (uint256));
+        revealedTradePrices[offerId] = decodedPrice;
+        isTradeRevealed[offerId] = true;
+        
+        emit TradePriceRevealed(offerId, decodedPrice);
+    }
+    
+    /**
+     * @notice Get all revealed trade prices for market analysis
+     * @param offerIds Array of offer IDs
+     * @return prices Array of revealed prices (0 if not revealed)
+     * @return revealed Array of booleans indicating if each trade is revealed
+     */
+    function getBatchRevealedPrices(uint256[] calldata offerIds) external view returns (
+        uint256[] memory prices,
+        bool[] memory revealed
+    ) {
+        prices = new uint256[](offerIds.length);
+        revealed = new bool[](offerIds.length);
+        
+        for (uint256 i = 0; i < offerIds.length; i++) {
+            prices[i] = revealedTradePrices[offerIds[i]];
+            revealed[i] = isTradeRevealed[offerIds[i]];
+        }
+        
+        return (prices, revealed);
+    }
 }

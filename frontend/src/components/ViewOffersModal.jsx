@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
 import { ethers } from 'ethers';
+import { useEffect, useState } from 'react';
+import { decryptMultipleValues } from '../utils/fhevmInstance';
 import EthosScoreBadge from './EthosScoreBadge';
 import './ViewOffersModal.css';
 
@@ -10,6 +11,8 @@ const ViewOffersModal = ({ listing, contract, account, onClose, onSuccess }) => 
   const [rejecting, setRejecting] = useState({});
   const [error, setError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
+  const [decrypting, setDecrypting] = useState({});
+  const [decryptedOffers, setDecryptedOffers] = useState({});
 
   useEffect(() => {
     loadOffers();
@@ -20,19 +23,19 @@ const ViewOffersModal = ({ listing, contract, account, onClose, onSuccess }) => 
       setLoading(true);
       const offerIds = await contract.getListingOffers(listing.id);
       console.log(`📦 Found ${offerIds.length} offer IDs:`, offerIds.map(id => Number(id)));
-      
+
       const offersData = [];
       for (let offerId of offerIds) {
         try {
           console.log(`🔍 Loading offer ${Number(offerId)}...`);
           const result = await contract.getOfferInfo(offerId);
-          
+
           // Contract returns: (listingId, buyer, offerType, customTerms, status, createdAt, escrowAmount)
           // BUT! Result only has 6 items (indices 0-5), so escrowAmount is at index 6 which causes "out of range"
           // Actually the contract DOES return it but ethers Result object has it at a different position
           console.log('📦 Raw result:', result);
           console.log('📦 Result length:', result.length);
-          
+
           // Access all 7 values - they exist in the Result proxy
           const listingId = result[0];
           const buyer = result[1];
@@ -41,9 +44,9 @@ const ViewOffersModal = ({ listing, contract, account, onClose, onSuccess }) => 
           const status = result[4];
           const createdAt = result[5];
           const escrowAmount = result[6];
-          
+
           console.log('📦 Parsed values:', { listingId, buyer, offerType, customTerms, status, createdAt, escrowAmount });
-          
+
           const offerData = {
             id: Number(offerId),
             listingId: Number(listingId),
@@ -54,21 +57,21 @@ const ViewOffersModal = ({ listing, contract, account, onClose, onSuccess }) => 
             createdAt: createdAt,
             escrowAmount: escrowAmount
           };
-          
+
           console.log(`✅ Loaded offer ${Number(offerId)}:`, offerData);
           offersData.push(offerData);
         } catch (err) {
           console.error(`❌ Error loading offer ${Number(offerId)}:`, err);
           console.error('Error details:', err.message);
           console.error('Error stack:', err.stack);
-          
+
           // Try alternative approach - use toArray() if available
           try {
             console.log('🔄 Trying alternative access method...');
             const result = await contract.getOfferInfo(offerId);
             const values = result.toArray ? result.toArray() : [...result];
             console.log('📦 Array values:', values);
-            
+
             const offerData = {
               id: Number(offerId),
               listingId: Number(values[0]),
@@ -79,7 +82,7 @@ const ViewOffersModal = ({ listing, contract, account, onClose, onSuccess }) => 
               createdAt: values[5],
               escrowAmount: values[6] || 0n
             };
-            
+
             console.log(`✅ Loaded offer ${Number(offerId)} (alternative):`, offerData);
             offersData.push(offerData);
           } catch (retryErr) {
@@ -87,7 +90,7 @@ const ViewOffersModal = ({ listing, contract, account, onClose, onSuccess }) => 
           }
         }
       }
-      
+
       // Sort by newest first
       offersData.sort((a, b) => Number(b.createdAt) - Number(a.createdAt));
       setOffers(offersData);
@@ -106,20 +109,20 @@ const ViewOffersModal = ({ listing, contract, account, onClose, onSuccess }) => 
       setAccepting(prev => ({ ...prev, [offerId]: true }));
       setError('');
       setSuccessMessage('');
-      
+
       console.log('✅ Accepting offer:', offerId);
-      
+
       const tx = await contract.acceptOffer(offerId);
       console.log('⏳ Waiting for confirmation...');
-      
+
       await tx.wait();
       console.log('✅ Offer accepted and trade completed!');
-      
+
       setSuccessMessage('🎉 Offer accepted! Trade completed successfully. Funds have been transferred. This listing is now SOLD.');
-      
+
       // Close modal immediately and reload
       if (onSuccess) onSuccess();
-      
+
       // Close after showing message briefly
       setTimeout(() => {
         onClose();
@@ -134,20 +137,20 @@ const ViewOffersModal = ({ listing, contract, account, onClose, onSuccess }) => 
 
   const handleRejectOffer = async (offerId) => {
     if (!confirm('Are you sure you want to reject this offer? The buyer will be refunded.')) return;
-    
+
     try {
       setRejecting(prev => ({ ...prev, [offerId]: true }));
       setError('');
       setSuccessMessage('');
-      
+
       const tx = await contract.rejectOffer(offerId);
       console.log('⏳ Rejecting offer...');
-      
+
       await tx.wait();
       console.log('✅ Offer rejected, buyer refunded');
-      
+
       setSuccessMessage('✅ Offer rejected. Buyer has been refunded their escrow.');
-      
+
       // Reload offers to show updated status
       setTimeout(() => {
         loadOffers();
@@ -157,6 +160,55 @@ const ViewOffersModal = ({ listing, contract, account, onClose, onSuccess }) => 
       setError(`Failed to reject offer: ${err.message}`);
     } finally {
       setRejecting(prev => ({ ...prev, [offerId]: false }));
+    }
+  };
+
+  const handleDecryptOffer = async (offerId) => {
+    try {
+      setDecrypting(prev => ({ ...prev, [offerId]: true }));
+      setError('');
+
+      console.log('🔓 Decrypting offer:', offerId);
+
+      // Get contract address
+      const contractAddress = await contract.getAddress();
+
+      // Get encrypted offer details from contract
+      const [encryptedAmount, encryptedValuation] = await contract.getEncryptedOfferDetails(offerId);
+
+      console.log('📦 Encrypted handles:', { amount: encryptedAmount, valuation: encryptedValuation });
+
+      // Prepare handles for user decryption (following Zama docs pattern)
+      const handles = [
+        { handle: encryptedAmount, contractAddress },
+        { handle: encryptedValuation, contractAddress }
+      ];
+
+      // User decryption with EIP-712 signature
+      console.log('🔐 Starting user decryption with signature...');
+      const results = await decryptMultipleValues(handles, account);
+
+      console.log('✅ Decryption results:', results);
+
+      // Convert from scaled values to ETH
+      // Values were encrypted as Math.floor(value * 1e6)
+      const amountInEth = Number(results[encryptedAmount]) / 1e6;
+      const valuationInEth = Number(results[encryptedValuation]) / 1e6;
+
+      setDecryptedOffers(prev => ({
+        ...prev,
+        [offerId]: {
+          amount: amountInEth.toFixed(6),
+          valuation: valuationInEth.toFixed(6)
+        }
+      }));
+
+      console.log(`✅ Offer #${offerId} decrypted: Amount=${amountInEth} ETH, Valuation=${valuationInEth} ETH`);
+    } catch (err) {
+      console.error('Error decrypting offer:', err);
+      setError(`Failed to decrypt offer: ${err.message}`);
+    } finally {
+      setDecrypting(prev => ({ ...prev, [offerId]: false }));
     }
   };
 
@@ -181,7 +233,7 @@ const ViewOffersModal = ({ listing, contract, account, onClose, onSuccess }) => 
     };
     return colors[status] || '#6b7280';
   };
-  
+
   const getStatusExplanation = (status) => {
     const explanations = {
       0: 'Waiting for seller to decrypt and review your offer',
@@ -228,7 +280,7 @@ const ViewOffersModal = ({ listing, contract, account, onClose, onSuccess }) => 
               ⚠️ {error}
             </div>
           )}
-          
+
           {successMessage && (
             <div className="success-message">
               {successMessage}
@@ -254,8 +306,8 @@ const ViewOffersModal = ({ listing, contract, account, onClose, onSuccess }) => 
                     <div className="offer-info">
                       <span className="offer-id">Offer #{offer.id}</span>
                       <div className="status-container">
-                        <span 
-                          className="offer-status" 
+                        <span
+                          className="offer-status"
                           style={{ background: getStatusColor(offer.status) + '20', color: getStatusColor(offer.status) }}
                         >
                           {getStatusLabel(offer.status)}
@@ -296,23 +348,75 @@ const ViewOffersModal = ({ listing, contract, account, onClose, onSuccess }) => 
                       <span className="detail-value">{formatDate(offer.createdAt)}</span>
                     </div>
 
-                    {/* Note: Encrypted offer amount - accept based on escrow */}
-                    <div className="offer-note">
-                      💡 <strong>Review this offer based on:</strong> Buyer's Ethos score, Escrow deposited, and Offer type
-                    </div>
+                    {/* Decrypted values display */}
+                    {decryptedOffers[offer.id] && (
+                      <div className="decrypted-info" style={{
+                        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                        padding: '16px',
+                        borderRadius: '12px',
+                        marginTop: '12px',
+                        color: 'white'
+                      }}>
+                        <div style={{ fontSize: '14px', fontWeight: 'bold', marginBottom: '8px' }}>
+                          🔓 Decrypted Offer Details:
+                        </div>
+                        <div style={{ display: 'flex', gap: '20px', fontSize: '13px' }}>
+                          <div>
+                            <div style={{ opacity: 0.9 }}>Offer Amount:</div>
+                            <div style={{ fontSize: '16px', fontWeight: 'bold' }}>
+                              {decryptedOffers[offer.id].amount} ETH
+                            </div>
+                          </div>
+                          <div>
+                            <div style={{ opacity: 0.9 }}>Token Valuation:</div>
+                            <div style={{ fontSize: '16px', fontWeight: 'bold' }}>
+                              {decryptedOffers[offer.id].valuation} ETH
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Note: Encrypted offer amount - decrypt to view */}
+                    {!decryptedOffers[offer.id] && offer.status === 0 && (
+                      <div className="offer-note">
+                        🔒 <strong>Encrypted Offer:</strong> Click "Decrypt" to view the offer amount and valuation privately.
+                      </div>
+                    )}
                   </div>
 
                   {/* ACTIONS - Only for pending offers */}
                   {offer.status === 0 && (
                     <div className="offer-actions">
-                      <button 
+                      {!decryptedOffers[offer.id] && (
+                        <button
+                          className="btn-decrypt"
+                          onClick={() => handleDecryptOffer(offer.id)}
+                          disabled={decrypting[offer.id]}
+                          style={{
+                            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                            color: 'white',
+                            border: 'none',
+                            padding: '10px 20px',
+                            borderRadius: '8px',
+                            cursor: decrypting[offer.id] ? 'not-allowed' : 'pointer',
+                            fontSize: '14px',
+                            fontWeight: '600',
+                            opacity: decrypting[offer.id] ? 0.6 : 1,
+                            transition: 'all 0.3s ease'
+                          }}
+                        >
+                          {decrypting[offer.id] ? '⏳ Decrypting...' : '🔓 Decrypt Offer'}
+                        </button>
+                      )}
+                      <button
                         className="btn-reject"
                         onClick={() => handleRejectOffer(offer.id)}
                         disabled={rejecting[offer.id]}
                       >
                         {rejecting[offer.id] ? '⏳ Rejecting...' : '✕ Reject & Refund'}
                       </button>
-                      <button 
+                      <button
                         className="btn-accept"
                         onClick={() => handleAcceptOffer(offer.id)}
                         disabled={accepting[offer.id]}

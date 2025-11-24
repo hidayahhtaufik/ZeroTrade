@@ -286,3 +286,174 @@ export async function encryptValue(value, contractAddress, userAddress) {
     throw new Error(`Failed to encrypt value: ${error.message}`);
   }
 }
+
+// ============================================
+// USER DECRYPTION FUNCTIONS (Private, Off-chain)
+// ============================================
+
+/**
+ * Decrypt multiple encrypted values for a user (seller viewing offers)
+ * Uses Zama Gateway relayer with ACL permission checks
+ * 
+ * Official pattern from Zama documentation: https://docs.zama.ai/protocol/relayer-sdk-guides/fhevm-relayer/user_decryption
+ * 
+ * @param {Array} encryptedHandles - Array of encrypted handle objects: [{ handle: "0x...", contractAddress: "0x..." }]
+ * @param {string} userAddress - The user's wallet address
+ * @returns {Object} Decrypted results keyed by handle
+ * 
+ * Example:
+ * const handles = [
+ *   { handle: "0x123...", contractAddress: "0xabc..." },
+ *   { handle: "0x456...", contractAddress: "0xabc..." }
+ * ];
+ * const results = await decryptMultipleValues(handles, userAddress);
+ * console.log(results["0x123..."]); // Decrypted value
+ */
+export async function decryptMultipleValues(encryptedHandles, userAddress) {
+  const fhe = getFheInstance();
+  
+  try {
+    console.log('🔓 Decrypting multiple values for user:', userAddress);
+    console.log('📋 Handles to decrypt:', encryptedHandles);
+    
+    // Generate keypair for this decryption session
+    const keypair = fhe.generateKeypair();
+    console.log('🔑 Generated keypair for decryption');
+    
+    // Extract unique contract addresses
+    const contractAddresses = [...new Set(encryptedHandles.map(h => h.contractAddress))];
+    console.log('📜 Contract addresses:', contractAddresses);
+    
+    // Create timestamp for EIP-712 (in seconds, as string)
+    const startTimeStamp = Math.floor(Date.now() / 1000).toString();
+    const durationDays = '10'; // String for consistency with Zama docs
+    
+    console.log('📝 Creating EIP-712 signature request...');
+    console.log('⏰ Timestamp:', startTimeStamp, 'Duration:', durationDays, 'days');
+    
+    // Create EIP-712 typed data
+    const eip712 = fhe.createEIP712(
+      keypair.publicKey,
+      contractAddresses,
+      startTimeStamp,
+      durationDays
+    );
+    
+    // Request user signature via MetaMask
+    console.log('✍️ Requesting user signature via MetaMask...');
+    
+    // Import ethers dynamically if not available
+    const ethers = window.ethers || (await import('ethers')).ethers;
+    const provider = new ethers.BrowserProvider(window.ethereum);
+    const signer = await provider.getSigner();
+    
+    const signature = await signer.signTypedData(
+      eip712.domain,
+      { UserDecryptRequestVerification: eip712.types.UserDecryptRequestVerification },
+      eip712.message
+    );
+    
+    console.log('✅ Signature obtained:', signature.substring(0, 20) + '...');
+    console.log('📡 Calling Zama relayer for user decryption...');
+    
+    // Ensure address is checksummed (Zama SDK requires proper checksum)
+    const checksummedAddress = ethers.getAddress(userAddress);
+    console.log('📍 Checksummed address:', checksummedAddress);
+    
+    // Call userDecrypt with proper parameters from Zama docs
+    const result = await fhe.userDecrypt(
+      encryptedHandles,              // Array of { handle, contractAddress }
+      keypair.privateKey,             // Generated private key
+      keypair.publicKey,              // Generated public key  
+      signature.replace('0x', ''),    // Signature without 0x prefix
+      contractAddresses,              // Array of contract addresses
+      checksummedAddress,             // User's wallet address (checksummed)
+      startTimeStamp,                 // Timestamp as string
+      durationDays                    // Duration as string
+    );
+    
+    console.log('✅ User decryption successful!');
+    console.log('📊 Decrypted results:', result);
+    
+    return result;
+  } catch (error) {
+    console.error('❌ User decryption failed:', error);
+    
+    // User-friendly error messages
+    if (error?.message?.includes('User rejected') || error?.code === 4001) {
+      throw new Error('❌ Signature rejected. You must sign the message to decrypt the values.');
+    }
+    
+    if (error?.message?.includes('not allowed') || error?.message?.includes('not authorized')) {
+      throw new Error('❌ Permission denied. The contract has not granted you access to decrypt these values.');
+    }
+    
+    if (error?.message?.includes('Failed to fetch') || error?.message?.includes('NetworkError')) {
+      throw new Error('❌ Zama relayer service temporarily unavailable. Please try again later.');
+    }
+    
+    throw new Error(`❌ Decryption failed: ${error.message}`);
+  }
+}
+
+/**
+ * Decrypt a single encrypted value (convenience wrapper)
+ * @param {string} encryptedHandle - The encrypted handle (0x-prefixed hex)
+ * @param {string} contractAddress - The contract address
+ * @param {string} userAddress - The user's wallet address
+ * @returns {BigInt} The decrypted value
+ */
+export async function decryptSingleValue(encryptedHandle, contractAddress, userAddress) {
+  const handles = [{ handle: encryptedHandle, contractAddress }];
+  const results = await decryptMultipleValues(handles, userAddress);
+  return results[encryptedHandle];
+}
+
+// ============================================
+// PUBLIC DECRYPTION FUNCTIONS (Transparent, On-chain)
+// ============================================
+
+/**
+ * Request public decryption for encrypted handles via Zama Gateway
+ * This is permissionless - anyone can decrypt values marked as publicly decryptable
+ * 
+ * Pattern from Zama's HighestDieRoll.ts example
+ * 
+ * @param {Array<string>} encryptedHandles - Array of encrypted handles to decrypt
+ * @returns {Object} { clearValues, abiEncodedClearValues, decryptionProof }
+ * 
+ * Example:
+ * const result = await requestPublicDecryption(["0x123..."]);
+ * // Use result.abiEncodedClearValues and result.decryptionProof
+ * // to call contract.verifyAndRecordTradePrice()
+ */
+export async function requestPublicDecryption(encryptedHandles) {
+  const fhe = getFheInstance();
+  
+  try {
+    console.log('🌐 Requesting public decryption for handles:', encryptedHandles);
+    
+    // Public decryption via Zama Gateway
+    // This works for ciphertexts marked with FHE.makePubliclyDecryptable()
+    const decryptedValues = await fhe.publicDecrypt(encryptedHandles);
+    
+    console.log('✅ Public decryption successful!');
+    console.log('📊 Decrypted values:', decryptedValues);
+    
+    // Format: { clearValues: {...}, abiEncodedClearValues: "0x...", decryptionProof: "0x..." }
+    return decryptedValues;
+  } catch (error) {
+    console.error('❌ Public decryption failed:', error);
+    
+    if (error?.message?.includes('not made publicly decryptable')) {
+      throw new Error('This value has not been marked for public decryption yet.');
+    }
+    
+    if (error?.message?.includes('Failed to fetch') || error?.message?.includes('NetworkError')) {
+      throw new Error('Zama relayer service temporarily unavailable. Please try again later.');
+    }
+    
+    throw new Error(`Public decryption failed: ${error.message}`);
+  }
+}
+

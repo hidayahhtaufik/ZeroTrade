@@ -22,10 +22,22 @@ export const CONTRACT_ABI = [
   "function acceptOffer(uint256 offerId)",
   "function rejectOffer(uint256 offerId)",
   "function cancelOffer(uint256 offerId)",
-  "function getOfferInfo(uint256 offerId) view returns (uint256 listingId, address buyer, string offerType, string customTerms, uint8 status, uint256 createdAt)",
+  "function getOfferInfo(uint256 offerId) view returns (uint256 listingId, address buyer, string offerType, string customTerms, uint8 status, uint256 createdAt, uint256 escrowAmount)",
   "function getOfferAmount(uint256 offerId) view returns (bytes32)",
   "function getUserOffers(address user) view returns (uint256[])",
   "function isOfferAcceptable(uint256 offerId) returns (bytes32)",
+  
+  // FHE User Decryption Functions (Private, Off-chain)
+  "function getEncryptedListingPrice(uint256 listingId) view returns (bytes32)",
+  "function getEncryptedOfferDetails(uint256 offerId) view returns (bytes32 encryptedAmount, bytes32 encryptedValuation)",
+  "function getBatchEncryptedOffers(uint256[] offerIds) view returns (bytes32[] amounts, bytes32[] valuations)",
+  
+  // FHE Public Decryption Functions (Transparent, On-chain)
+  "function requestPublicRevealTrade(uint256 offerId)",
+  "function verifyAndRecordTradePrice(uint256 offerId, bytes clearPrice, bytes decryptionProof)",
+  "function getBatchRevealedPrices(uint256[] offerIds) view returns (uint256[] prices, bool[] revealed)",
+  "function revealedTradePrices(uint256 offerId) view returns (uint256)",
+  "function isTradeRevealed(uint256 offerId) view returns (bool)",
   
   // Events (Updated with Web3 fields)
   "event ListingCreated(uint256 indexed listingId, address indexed seller, string title, string category, string tokenSymbol, uint8 dealType, uint256 fdv, uint256 timestamp)",
@@ -36,7 +48,9 @@ export const CONTRACT_ABI = [
   "event OfferRejected(uint256 indexed offerId, uint256 indexed listingId)",
   "event OfferCancelled(uint256 indexed offerId, address indexed buyer)",
   "event TradeCompleted(uint256 indexed offerId, uint256 indexed listingId, address indexed seller, address buyer)",
-  "event PlatformFeeCollected(uint256 indexed offerId, uint256 feeAmount)"
+  "event PlatformFeeCollected(uint256 indexed offerId, uint256 feeAmount)",
+  "event TradeRevealRequested(uint256 indexed offerId, bytes32 indexed encryptedHandle)",
+  "event TradePriceRevealed(uint256 indexed offerId, uint256 clearPrice)"
 ];
 
 // Listing Status Enum
